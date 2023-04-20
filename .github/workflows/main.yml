@@ -1,0 +1,41 @@
+name: Label & comment issues
+on:
+  issues:
+    types: [reopened, opened, closed]
+  pull_request:
+    types: [opened]
+
+jobs:
+  label_issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Attach label to issue
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["issue", "fix"]
+            })
+      - name: Comment on issue
+        if: github.event_name == 'issues'
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            {{#if github.event.action == 'opened'}}
+              Thanks for opening this issue! We'll take a look as soon as possible.
+            {{else if github.event.action == 'closed'}}
+              This issue has been closed. Thank you for reporting it!
+            {{/if}}
+      - name: Comment on pull request
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Congratulations on opening your first pull request! We appreciate your contribution to our project.
